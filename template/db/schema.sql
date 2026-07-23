@@ -36,3 +36,18 @@ create table if not exists audit_events (
 create index if not exists audit_events_session_idx on audit_events(session_id);
 create index if not exists audit_events_stage_idx on audit_events(stage);
 alter table audit_events enable row level security;
+
+-- Real API cost tracking (safe to re-run).
+create table if not exists audit_usage (
+  id bigint generated always as identity primary key,
+  kind text not null,
+  model text not null,
+  input_tokens bigint not null default 0,
+  output_tokens bigint not null default 0,
+  cache_write_tokens bigint not null default 0,
+  cache_read_tokens bigint not null default 0,
+  cost_usd numeric(12,6) not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_usage_created_idx on audit_usage(created_at desc);
+alter table audit_usage enable row level security;

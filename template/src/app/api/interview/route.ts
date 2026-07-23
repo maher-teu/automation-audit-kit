@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { claude, extractJson, interviewerSystem, historyToMessages } from "@/lib/ai";
 import { CONFIG } from "@/config";
+import { logUsage } from "@/lib/usage";
 import { InterviewTurn, QA, TapAnswers } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       system: interviewerSystem(taps, name || ""),
       messages: msgs,
     });
+    await logUsage("interview", CONFIG.model, resp.usage);
     const text = resp.content.filter((b) => b.type === "text").map((b) => (b as { text: string }).text).join("\n");
     const turn = extractJson<InterviewTurn>(text);
     return NextResponse.json(turn);

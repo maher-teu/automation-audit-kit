@@ -42,6 +42,23 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
 
   let rows: AuditRow[] = [];
   const funnel = new Map<string, Set<string>>();
+  // Real API costs: exact token counts logged per Claude call, priced at the
+  // published per-token rates. Not an estimate.
+  let costToday = 0, cost30 = 0, costAll = 0, calls = 0;
+  try {
+    const { data: usage } = await sb()
+      .from("audit_usage").select("cost_usd,created_at")
+      .order("created_at", { ascending: false }).limit(20000);
+    const now = Date.now();
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    for (const u of (usage as { cost_usd: number; created_at: string }[]) || []) {
+      const c = Number(u.cost_usd) || 0;
+      const t = new Date(u.created_at).getTime();
+      costAll += c; calls += 1;
+      if (t >= dayStart.getTime()) costToday += c;
+      if (now - t <= 30 * 24 * 3600 * 1000) cost30 += c;
+    }
+  } catch { /* cost card hidden below */ }
   try {
     const { data } = await sb()
       .from("audits").select("id,name,email,phone,taps,map,stage,created_at")
@@ -69,6 +86,22 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       <div className="kick">Private</div>
       <h1 style={{ marginTop: 6 }}>Leads</h1>
       <p className="sub">{rows.length} captured, newest first. The funnel shows where visitors fall off.</p>
+
+      {calls > 0 && (
+        <div className="card" style={{ marginTop: 16, display: "flex", gap: 8, padding: "12px 14px", flexWrap: "wrap" }}>
+          {[
+            { v: `$${costToday.toFixed(2)}`, l: "API cost today" },
+            { v: `$${cost30.toFixed(2)}`, l: "last 30 days" },
+            { v: `$${costAll.toFixed(2)}`, l: "all time" },
+            { v: `$${rows.length ? (costAll / rows.length).toFixed(2) : "0.00"}`, l: "per lead" },
+          ].map((s) => (
+            <div key={s.l} style={{ flex: 1, minWidth: 90, textAlign: "center" }}>
+              <div style={{ fontSize: 17, fontWeight: 750, color: "var(--accent)" }}>{s.v}</div>
+              <div style={{ fontSize: 10.5, color: "var(--sec)", marginTop: 2 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {opened > 0 && (
         <div className="card" style={{ marginTop: 16, padding: "10px 16px 14px" }}>

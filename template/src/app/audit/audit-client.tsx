@@ -108,9 +108,21 @@ export default function StartClient({ country }: { country: string }) {
   const [err, setErr] = useState("");
   const restored = useRef(false);
   const genRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const doneRef = useRef(false);
 
   useEffect(() => { setDial(dialFor(country)); }, [country]);
   useEffect(() => { track("quiz_open"); }, []);
+
+  // A new question, typing indicator, or insight always pulls the screen to the
+  // bottom, so nobody has to scroll to find what Otto just said.
+  useEffect(() => {
+    if (stage !== "interview") return;
+    const t = setTimeout(() => {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [stage, turn, thinking, insights.length]);
 
   // ── session autosave / resume ──
   useEffect(() => {
@@ -220,10 +232,44 @@ export default function StartClient({ country }: { country: string }) {
     setStage("taps");
   };
 
+  // Landing on the finished map exactly once, whichever signal arrives first
+  // (the generate response, or the status poll seeing the map in the database).
+  const finish = useCallback((id: string) => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    if (genRef.current) clearInterval(genRef.current);
+    if (pollRef.current) clearInterval(pollRef.current);
+    track("map_ready");
+    chime();
+    try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+    window.location.href = `/map/${id}`;
+  }, []);
+
   const generate = async (hist?: QA[]) => {
     setStage("generating"); setGenStep(0); setErr("");
+    doneRef.current = false;
     if (genRef.current) clearInterval(genRef.current);
     genRef.current = setInterval(() => setGenStep((s) => Math.min(s + 1, GEN_LINES.length - 1)), 3800);
+
+    // Belt and braces: poll the database directly. Even if the generate response
+    // never reaches this phone (timeout, network blip, app backgrounded), the
+    // map is spotted the moment it lands and we redirect anyway.
+    const startedAt = Date.now();
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (auditId) {
+      pollRef.current = setInterval(async () => {
+        try {
+          const r = await fetch(`/api/status?id=${auditId}`);
+          const s = await r.json();
+          if (s?.ready) finish(auditId);
+          else if (Date.now() - startedAt > 240000) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setErr("Something hiccuped building your map. Give it one more go.");
+          }
+        } catch { /* keep polling */ }
+      }, 2500);
+    }
+
     try {
       const r = await fetch("/api/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -237,14 +283,14 @@ export default function StartClient({ country }: { country: string }) {
       });
       const data = await r.json();
       if (!r.ok || !data.id) throw new Error(data.error || "failed");
-      if (genRef.current) clearInterval(genRef.current);
-      track("map_ready");
-      chime();
-      localStorage.removeItem(SAVE_KEY);
-      window.location.href = `/map/${data.id}`;
+      finish(data.id);
     } catch {
-      if (genRef.current) clearInterval(genRef.current);
-      setErr("Something hiccuped building your map. Give it one more go.");
+      // The POST failed or its response got lost. If we can poll, the map may
+      // still be on its way; only surface an error when polling is impossible.
+      if (!auditId && !doneRef.current) {
+        if (genRef.current) clearInterval(genRef.current);
+        setErr("Something hiccuped building your map. Give it one more go.");
+      }
     }
   };
 
@@ -282,8 +328,8 @@ export default function StartClient({ country }: { country: string }) {
         {found > 0 && <span className="chip" style={{ color: "var(--accent)", flex: "0 0 auto" }}>{found} automation{found > 1 ? "s" : ""} spotted</span>}
       </div>
 
-      {/* insights stay on screen, they are the receipts */}
-      {insights.map((t, i) => (
+      {/* insights stay on screen, they are the receipts (cleared for the finale) */}
+      {stage !== "generating" && insights.map((t, i) => (
         <div key={i} className="card fade" style={{ marginTop: 10, borderLeft: "3px solid var(--accent)", fontSize: 13.5, color: "var(--sec)", padding: "12px 15px" }}>
           {t}
         </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { claude, extractJson, generatorSystem } from "@/lib/ai";
 import { sb } from "@/lib/db";
 import { CONFIG } from "@/config";
+import { logUsage } from "@/lib/usage";
 import { AuditMap, QA, TapAnswers } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -17,6 +18,14 @@ export async function POST(req: NextRequest) {
     const { taps, name, email, phone, history } = body;
     if (!taps?.category || !email) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
+    // Retry-safe: if this audit already has a map (a previous attempt finished
+    // server-side but the response never reached the phone), return it instantly.
+    if (body.auditId) {
+      const { data: existing } = await sb()
+        .from("audits").select("map").eq("id", body.auditId).single();
+      if (existing?.map) return NextResponse.json({ id: body.auditId });
+    }
+
     const transcript = (history || [])
       .map((h, i) => `Q${i + 1}: ${h.q}\nA${i + 1}: ${h.a}`)
       .join("\n\n");
@@ -30,6 +39,7 @@ export async function POST(req: NextRequest) {
         content: `Here is the completed interview.\n\nFirst name: ${name || "friend"}\n\n${transcript}\n\n${body.website ? `Their website: ${body.website}\n\n` : ""}Generate the automation map JSON now.`,
       }],
     });
+    await logUsage("generate", CONFIG.model, resp.usage);
     const text = resp.content.filter((b) => b.type === "text").map((b) => (b as { text: string }).text).join("\n");
     const map = extractJson<AuditMap>(text);
 
