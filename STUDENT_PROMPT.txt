@@ -1,0 +1,21 @@
+━━━ COPY EVERYTHING BELOW THIS LINE AND PASTE IT INTO A NEW CLAUDE CODE SESSION ━━━
+
+I want to set up my own AI lead magnet: "The 5-Minute Automation Audit". It interviews
+business owners (they can speak their answers), finds what AI can automate in their
+business with real money math, gives them a personal automation map, and captures their
+name, email and phone as a lead for me, with a booking button for a free build call.
+
+My coach gave me the kit. Here is what to do:
+
+1. Clone the kit: git clone https://github.com/maher-teu/automation-audit-kit
+2. Open automation-audit-kit/SETUP.md and follow it EXACTLY, step by step. It tells you how to
+   interview me, configure everything, and deploy it on my own free accounts (Vercel +
+   Supabase + my Anthropic API key).
+3. Talk to me like I am non-technical. One step at a time. Open the right URLs for me and
+   tell me exactly what to click and paste. Test the whole thing end to end yourself
+   before you tell me it is done.
+
+When we finish I want: my live audit URL, my private leads page URL, and a one-line
+message I can send to 10 people today to get my first leads.
+
+━━━ END OF PROMPT ━━━
