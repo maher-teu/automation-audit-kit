@@ -34,6 +34,23 @@ const CSS = `
   ::placeholder{color:var(--ter);}
   .fade{animation:up .4s cubic-bezier(.2,.7,.2,1) both;}
   @keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .kit-topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:14px 0 12px;background:var(--bg);}
+  .kit-typing{display:inline-flex;align-items:center;gap:10px;margin-top:16px;background:var(--card);border-radius:99px;padding:9px 16px 9px 9px;}
+  .kit-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;}
+  .kit-dots{display:inline-flex;gap:4px;}
+  .kit-dots i{width:6px;height:6px;border-radius:50%;background:var(--sec);animation:kitDot 1.2s ease-in-out infinite;}
+  .kit-dots i:nth-child(2){animation-delay:.15s}
+  .kit-dots i:nth-child(3){animation-delay:.3s}
+  @keyframes kitDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  .kit-spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,0.25);border-top-color:var(--accent-ink);border-radius:50%;animation:kitSpin .8s linear infinite;vertical-align:-3px;margin-right:8px;}
+  @keyframes kitSpin{to{transform:rotate(360deg)}}
+  select{width:100%;background:var(--fill);border:1px solid var(--hair);border-radius:14px;color:var(--ink);font-size:14.5px;padding:13px 12px;outline:none;font-family:inherit;appearance:none;cursor:pointer;}
+  select:focus{border-color:var(--accent);}
+  @media (min-width: 900px){
+    .wrap{max-width:720px;padding-top:7vh;}
+    h1{font-size:34px;}
+    .sub{font-size:16px;}
+  }
   .powered{margin-top:36px;text-align:center;font-size:11.5px;color:var(--ter);}
   .powered a{color:var(--ter);}
 `;

@@ -34,6 +34,24 @@ const TAP_STEPS: { key: keyof TapAnswers; title: string; options: { v: string; l
 
 const SAVE_KEY = "audit-session-v1";
 
+// Country dial codes for the phone field (label + code). Default guessed from browser locale.
+const DIALS: { c: string; d: string }[] = [
+  { c: "SE", d: "+46" }, { c: "NO", d: "+47" }, { c: "DK", d: "+45" }, { c: "FI", d: "+358" },
+  { c: "DE", d: "+49" }, { c: "UK", d: "+44" }, { c: "US", d: "+1" }, { c: "CA", d: "+1" },
+  { c: "FR", d: "+33" }, { c: "ES", d: "+34" }, { c: "IT", d: "+39" }, { c: "NL", d: "+31" },
+  { c: "BE", d: "+32" }, { c: "CH", d: "+41" }, { c: "AT", d: "+43" }, { c: "PT", d: "+351" },
+  { c: "IE", d: "+353" }, { c: "PL", d: "+48" }, { c: "AE", d: "+971" }, { c: "SA", d: "+966" },
+  { c: "AU", d: "+61" }, { c: "NZ", d: "+64" }, { c: "BR", d: "+55" }, { c: "MX", d: "+52" },
+  { c: "IN", d: "+91" },
+];
+function guessDial(): string {
+  try {
+    const region = (navigator.language.split("-")[1] || "").toUpperCase();
+    const hit = DIALS.find((x) => x.c === region || (region === "GB" && x.c === "UK"));
+    return hit?.d || "+46";
+  } catch { return "+46"; }
+}
+
 export default function AuditPage() {
   const [stage, setStage] = useState<Stage>("name");
   const [name, setName] = useState("");
@@ -43,15 +61,19 @@ export default function AuditPage() {
   const [history, setHistory] = useState<QA[]>([]);
   const [turn, setTurn] = useState<InterviewTurn | null>(null);
   const [draft, setDraft] = useState("");
+  const [suggSel, setSuggSel] = useState<string[]>([]);
   const [thinking, setThinking] = useState(false);
-  const [insight, setInsight] = useState("");
+  const [insights, setInsights] = useState<string[]>([]);
   const [found, setFound] = useState(0);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [dial, setDial] = useState("+46");
   const [website, setWebsite] = useState("");
   const [genLine, setGenLine] = useState("Reading your answers…");
   const [err, setErr] = useState("");
   const restored = useRef(false);
+
+  useEffect(() => { setDial(guessDial()); }, []);
 
   // ── session autosave / resume ──
   useEffect(() => {
@@ -85,7 +107,7 @@ export default function AuditPage() {
       });
       const data = (await r.json()) as InterviewTurn;
       if (data.foundSoFar && data.foundSoFar > found) setFound(data.foundSoFar);
-      if (data.insight) { setInsight(data.insight); setTimeout(() => setInsight(""), 6000); }
+      if (data.insight) setInsights((cur) => [...cur, data.insight!]); // stays visible, no vanishing
       if (data.done) setStage("contact");
       else setTurn(data);
     } catch {
@@ -96,8 +118,15 @@ export default function AuditPage() {
   const answer = (text: string) => {
     if (!turn?.question || !text.trim()) return;
     const hist = [...history, { q: turn.question, a: text.trim() }];
-    setHistory(hist); setDraft(""); setTurn(null);
+    setHistory(hist); setDraft(""); setSuggSel([]); setTurn(null);
     nextTurn(hist, taps as TapAnswers);
+  };
+
+  // Multi-select interview questions: combine toggled chips (plus anything typed) into one answer.
+  const sendMulti = () => {
+    const parts = [...suggSel];
+    if (draft.trim()) parts.push(draft.trim());
+    if (parts.length) answer(parts.join(" + "));
   };
 
   const generate = async () => {
@@ -114,7 +143,7 @@ export default function AuditPage() {
     try {
       const r = await fetch("/api/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taps, name, email: email.trim(), phone: phone.trim(), website: website.trim(), history }),
+        body: JSON.stringify({ taps, name, email: email.trim(), phone: phone.trim() ? `${dial} ${phone.trim()}` : "", website: website.trim(), history }),
       });
       const data = await r.json();
       if (!r.ok || !data.id) throw new Error(data.error || "failed");
@@ -134,20 +163,20 @@ export default function AuditPage() {
 
   return (
     <main className="wrap" style={{ maxWidth: 560 }}>
-      {/* progress + found counter */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {/* progress + found counter, sticky so it never scrolls away */}
+      <div className="kit-topbar">
         <div style={{ flex: 1, height: 5, background: "var(--fill)", borderRadius: 99, overflow: "hidden" }}>
           <div style={{ width: `${progress}%`, height: "100%", background: "var(--accent)", borderRadius: 99, transition: "width .5s cubic-bezier(.2,.7,.2,1)" }} />
         </div>
-        {found > 0 && <span className="chip" style={{ color: "var(--accent)" }}>{found} automation{found > 1 ? "s" : ""} spotted</span>}
+        {found > 0 && <span className="chip" style={{ color: "var(--accent)", flex: "0 0 auto" }}>{found} automation{found > 1 ? "s" : ""} spotted</span>}
       </div>
 
-      {/* insight toast */}
-      {insight && (
-        <div className="card fade" style={{ marginTop: 14, borderLeft: "3px solid var(--accent)", fontSize: 13.5, color: "var(--sec)" }}>
-          {insight}
+      {/* insights stay on screen, they are the receipts */}
+      {insights.map((t, i) => (
+        <div key={i} className="card fade" style={{ marginTop: 10, borderLeft: "3px solid var(--accent)", fontSize: 13.5, color: "var(--sec)", padding: "12px 15px" }}>
+          {t}
         </div>
-      )}
+      ))}
 
       {stage === "name" && (
         <div className="fade" style={{ marginTop: 40 }}>
@@ -222,24 +251,42 @@ export default function AuditPage() {
             </div>
           ))}
 
-          {thinking && <div className="sub fade" style={{ marginTop: 10 }}>{CONFIG.agentName} is thinking…</div>}
+          {thinking && (
+            <div className="fade kit-typing" aria-label={`${CONFIG.agentName} is typing`}>
+              <span className="kit-avatar">{CONFIG.agentName[0]}</span>
+              <span className="kit-dots"><i /><i /><i /></span>
+            </div>
+          )}
 
           {turn?.question && !thinking && (
             <div className="fade">
               <h1 style={{ fontSize: 22, lineHeight: 1.3 }}>{turn.question}</h1>
               {turn.suggestions && turn.suggestions.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-                  {turn.suggestions.map((s) => (
-                    <button key={s} className="btn2" onClick={() => answer(s)}>{s}</button>
-                  ))}
+                  {turn.suggestions.map((s) => {
+                    const sel = turn.multiSelect && suggSel.includes(s);
+                    return (
+                      <button key={s} className="btn2" style={sel ? { borderColor: "var(--accent)", color: "var(--accent)" } : undefined}
+                        onClick={() => {
+                          if (turn.multiSelect) setSuggSel((cur) => cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]);
+                          else answer(s);
+                        }}>
+                        {sel ? "✓ " : ""}{s}
+                      </button>
+                    );
+                  })}
                 </div>
+              )}
+              {turn.multiSelect && (
+                <div className="sub" style={{ fontSize: 12.5, marginTop: 8 }}>Pick all that apply, then send.</div>
               )}
               <div style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "center" }}>
                 <input placeholder="Or say it in your own words…" value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && answer(draft)} />
-                <VoiceInput onLive={setDraft} onText={(t) => answer(t)} />
-                <button className="btn" disabled={!draft.trim()} onClick={() => answer(draft)}>Send</button>
+                  onKeyDown={(e) => e.key === "Enter" && (turn.multiSelect ? sendMulti() : answer(draft))} />
+                <VoiceInput onLive={setDraft} onText={(t) => answer(turn.multiSelect ? [...suggSel, t.trim()].filter(Boolean).join(" + ") : t)} />
+                <button className="btn" disabled={turn.multiSelect ? suggSel.length === 0 && !draft.trim() : !draft.trim()}
+                  onClick={() => (turn.multiSelect ? sendMulti() : answer(draft))}>Send</button>
               </div>
             </div>
           )}
@@ -253,7 +300,13 @@ export default function AuditPage() {
           <p className="sub">Your map gets a private link that stays live. I will email it to you, and text it so you have it on the go.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
             <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input type="tel" placeholder="Phone (for the map link by text)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <select value={dial} onChange={(e) => setDial(e.target.value)} aria-label="Country code"
+                style={{ flex: "0 0 auto", width: 118 }}>
+                {DIALS.map((x) => <option key={x.c + x.d} value={x.d}>{x.c} {x.d}</option>)}
+              </select>
+              <input type="tel" placeholder="Phone (for the map link by text)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
             <input placeholder="Your website (optional, sharpens the results)" value={website} onChange={(e) => setWebsite(e.target.value)} />
           </div>
           {err && <p style={{ color: "var(--red)", fontSize: 13, marginTop: 10 }}>{err}</p>}

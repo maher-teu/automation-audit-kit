@@ -1,4 +1,6 @@
 import { CONFIG } from "@/config";
+import Hero from "@/components/hero";
+import StartButton from "@/components/start-btn";
 
 // The landing page: one promise, one button. The audit itself does the selling.
 export default function Landing() {
@@ -13,10 +15,9 @@ export default function Landing() {
         interviews you like a human would, then hands you a personal map: what to automate, what each
         one saves or makes you, and exactly how to build it.
       </p>
-      <div className="fade" style={{ marginTop: 28 }}>
-        <a className="btn" href="/audit" style={{ fontSize: 16, padding: "16px 34px" }}>
-          Start the free audit
-        </a>
+      <Hero />
+      <div className="fade" style={{ marginTop: 30 }}>
+        <StartButton href="/audit">Start the free audit</StartButton>
       </div>
       <div className="fade" style={{ marginTop: 18, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
         <span className="chip">Speak your answers</span>

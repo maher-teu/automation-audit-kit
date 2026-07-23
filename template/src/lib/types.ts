@@ -13,7 +13,8 @@ export interface InterviewTurn {
   done: boolean;
   question?: string;
   suggestions?: string[]; // tap-able answers, always offered so typing is optional
-  insight?: string;       // mid-interview "found so far" drop, shown as a toast card
+  multiSelect?: boolean;  // true = several suggestions can be true at once (toggle + send)
+  insight?: string;       // mid-interview "found so far" drop, shown persistently
   foundSoFar?: number;    // running count of automations spotted
 }
 
