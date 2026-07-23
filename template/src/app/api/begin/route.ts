@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sb } from "@/lib/db";
+import { upsertAuditContact } from "@/lib/deliver";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -30,6 +31,12 @@ export async function POST(req: NextRequest) {
       .select("id")
       .single();
     if (error) throw error;
+
+    // Into your GHL right away (if configured), tagged as started. Best effort.
+    await upsertAuditContact(
+      { name, email, phone: (body.phone || "").trim() },
+      ["automation-audit", "audit-started"]
+    ).catch((e) => console.error("[audit] early GHL upsert failed:", e));
 
     return NextResponse.json({ id: data.id });
   } catch (e) {

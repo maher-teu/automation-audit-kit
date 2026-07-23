@@ -3,6 +3,7 @@ import { claude, extractJson, generatorSystem } from "@/lib/ai";
 import { sb } from "@/lib/db";
 import { CONFIG } from "@/config";
 import { logUsage } from "@/lib/usage";
+import { deliverLead } from "@/lib/deliver";
 import { AuditMap, QA, TapAnswers } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -66,8 +67,16 @@ export async function POST(req: NextRequest) {
       id = data.id as string;
     }
 
-    // Fire-and-forget lead delivery (email + GHL). Never blocks the visitor.
-    notifyLead({ id, name, email, phone, taps, map }).catch((e) =>
+    // Lead delivery. Awaited (serverless would kill fire-and-forget), and every
+    // channel is best-effort: a delivery failure never blocks the visitor.
+    const base = process.env.NEXT_PUBLIC_BASE_URL || "";
+    await deliverLead({
+      id, name, email, phone, taps,
+      history: history || [], map, mapUrl: `${base}/map/${id}`,
+    }).catch((e) => console.error("lead delivery failed:", e));
+
+    // Legacy optional channels (Resend email + generic webhook), harmless if unset.
+    await notifyLead({ id, name, email, phone, taps, map }).catch((e) =>
       console.error("lead notify failed:", e)
     );
 

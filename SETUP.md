@@ -30,11 +30,23 @@ and where to paste the result. Create `template/.env.local` from `.env.example` 
    Then: SQL Editor -> New query -> paste the contents of `template/db/schema.sql` -> Run.
 3. **LEADS_KEY**: generate a long random string yourself and set it. Tell them: your private
    leads page will be `your-site.com/leads?k=THIS_KEY`, save it somewhere.
-4. **Optional, offer but do not push:**
-   - Resend (free) for email delivery: resend.com -> API key -> `RESEND_API_KEY`, their email
-     into `NOTIFY_EMAIL`.
-   - GHL: Automations -> Workflows -> new workflow with an **Inbound Webhook** trigger, copy
-     the webhook URL into `GHL_WEBHOOK_URL`. New leads then land straight in their GHL.
+4. **Optional, offer but do not push. Ask one question first: "Do you use GoHighLevel?"**
+   - **If they use GHL (recommended setup):** GHL -> Settings -> Integrations -> Private
+     Integrations -> New, enable contacts + conversations/message scopes, copy the token into
+     `GHL_API_KEY`. Then Settings -> Business Profile, copy the Location ID into
+     `GHL_LOCATION_ID`. With these two set: every lead lands as a contact the moment they
+     type their email (tagged audit-started), the full interview transcript + map link land
+     in the contact's notes, and completed leads automatically get their map by email (and
+     SMS if they left a phone) sent from their GHL. Warn them: the email needs their GHL
+     sending domain configured, the SMS needs a phone number in GHL; if either is missing
+     that channel silently skips, nothing breaks.
+   - **Telegram ping per lead (free, everyone should want this):** message @BotFather ->
+     /newbot -> paste the token into `TELEGRAM_BOT_TOKEN`. Have them send one message to
+     their new bot, then get their numeric id from @userinfobot into `TELEGRAM_CHAT_ID`.
+   - Resend (free) for email delivery without GHL: resend.com -> API key -> `RESEND_API_KEY`,
+     their email into `NOTIFY_EMAIL`.
+   - GHL inbound webhook (only if they want workflow triggers too): Automations -> Workflows
+     -> new workflow with an **Inbound Webhook** trigger, URL into `GHL_WEBHOOK_URL`.
 
 ## Step 3, verify locally
 
@@ -57,8 +69,12 @@ it doubles as their first demo). Fix anything broken before deploying.
 ## Step 5, hand over (tell them exactly this)
 
 - Your audit lives at: [their URL]. Put it in your bio, your emails, send it to past leads.
-- Your private leads page: [their URL]/leads?k=[their key].
-- Every lead also emails you / lands in GHL (if configured).
+- Your private leads page: [their URL]/leads?k=[their key]. It shows every lead (even the
+  ones who quit halfway, with the exact question where they dropped), a drop-off funnel,
+  and your real API costs: today, last 30 days, all time, and per lead. Exact numbers from
+  logged tokens, not estimates.
+- Contact info is captured BEFORE the interview, so a half-finished audit is still a lead.
+- Every lead also lands in GHL / pings your Telegram / emails you (whichever you configured).
 - To change your niche, name, or booking link: edit `src/config.ts`, then `npx vercel --prod`.
 - Post it somewhere today. The first share is the hardest one.
 
