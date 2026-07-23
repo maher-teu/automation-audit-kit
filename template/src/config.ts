@@ -26,7 +26,7 @@ export const CONFIG = {
   // Language the agent interviews in ("auto" detects from the visitor's browser).
   language: "auto" as "auto" | "en" | "sv" | "de" | "es",
 
-  // Max interview questions after the 4 quick taps (hard cap 10).
+  // Max interview questions after the 5 quick steps (hard cap 12, stops early).
   maxQuestions: 12,
 
   // Claude model for the interview + map generation.
