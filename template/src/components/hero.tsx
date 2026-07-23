@@ -5,12 +5,12 @@ import { CONFIG } from "@/config";
 // crisp on every screen, themable, and weighs nothing.
 export default function Hero() {
   return (
-    <div className="fade" style={{
+    <div className="fade kit-hero" style={{
       display: "flex", gap: 16, justifyContent: "center", alignItems: "stretch",
-      flexWrap: "wrap", margin: "34px auto 0", maxWidth: 640, textAlign: "left",
+      flexWrap: "wrap", maxWidth: 640, textAlign: "left",
     }}>
-      {/* the interview, phone-shaped */}
-      <div style={{
+      {/* the interview, phone-shaped (desktop only; on phones the results card carries the pitch) */}
+      <div className="kit-hero-otto" style={{
         flex: "1 1 240px", maxWidth: 280, background: "var(--card)", borderRadius: 26,
         padding: "18px 16px", boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
         border: "1px solid var(--hair)",

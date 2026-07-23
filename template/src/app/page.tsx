@@ -5,9 +5,9 @@ import StartButton from "@/components/start-btn";
 // The landing page: one promise, one button. The audit itself does the selling.
 export default function Landing() {
   return (
-    <main className="wrap" style={{ paddingTop: 64, textAlign: "center" }}>
+    <main className="wrap kit-landing" style={{ textAlign: "center" }}>
       <div className="kick fade">{CONFIG.businessName} · free, 5 minutes</div>
-      <h1 className="fade" style={{ marginTop: 10, fontSize: 34 }}>
+      <h1 className="fade" style={{ marginTop: 10 }}>
         Find out exactly what AI can automate in your business
       </h1>
       <p className="sub fade" style={{ maxWidth: 480, margin: "12px auto 0" }}>
@@ -16,7 +16,7 @@ export default function Landing() {
         one saves or makes you, and exactly how to build it.
       </p>
       <Hero />
-      <div className="fade" style={{ marginTop: 30 }}>
+      <div className="fade kit-cta">
         <StartButton href="/audit">Start the free audit</StartButton>
       </div>
       <div className="fade" style={{ marginTop: 18, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>

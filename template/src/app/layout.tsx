@@ -46,10 +46,22 @@ const CSS = `
   @keyframes kitSpin{to{transform:rotate(360deg)}}
   select{width:100%;background:var(--fill);border:1px solid var(--hair);border-radius:14px;color:var(--ink);font-size:14.5px;padding:13px 12px;outline:none;font-family:inherit;appearance:none;cursor:pointer;}
   select:focus{border-color:var(--accent);}
+  .wrap.kit-landing{padding-top:64px;}
+  .kit-landing h1{font-size:34px;}
+  .kit-hero{margin:34px auto 0;}
+  .kit-cta{margin-top:30px;}
   @media (min-width: 900px){
     .wrap{max-width:720px;padding-top:7vh;}
     h1{font-size:34px;}
     .sub{font-size:16px;}
+  }
+  @media (max-width: 899px){
+    .wrap.kit-landing{padding-top:22px;}
+    .kit-landing h1{font-size:25px;}
+    .kit-landing .sub{font-size:14px;}
+    .kit-hero{margin:18px auto 0;}
+    .kit-hero-otto{display:none;}
+    .kit-cta{margin-top:20px;}
   }
   .powered{margin-top:36px;text-align:center;font-size:11.5px;color:var(--ter);}
   .powered a{color:var(--ter);}
