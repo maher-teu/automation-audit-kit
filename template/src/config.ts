@@ -27,7 +27,7 @@ export const CONFIG = {
   language: "auto" as "auto" | "en" | "sv" | "de" | "es",
 
   // Max interview questions after the 4 quick taps (hard cap 10).
-  maxQuestions: 8,
+  maxQuestions: 12,
 
   // Claude model for the interview + map generation.
   model: "claude-sonnet-4-6",

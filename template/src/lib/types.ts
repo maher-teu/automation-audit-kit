@@ -2,6 +2,7 @@
 
 export interface TapAnswers {
   category: "online" | "local" | "ecom" | "saas";
+  businessDesc: string; // their own words: "I run a tattoo studio in Malmo"
   revenue: string;   // e.g. "$10-30k/mo"
   teamSize: string;  // e.g. "Just me"
   leadSource: string;
@@ -30,10 +31,12 @@ export interface MapItem {
 }
 
 export interface AuditMap {
-  headline: string;      // "Marcus, your agency is..."
-  diagnosis: string;     // the money line computed from their numbers
+  headline: string;      // max 8 words, punchy: "Marcus, you are doing 3 people's jobs"
+  diagnosis: string;     // 2-3 sentences computed from their numbers (shown in a card)
   score: number;         // 0-100 automation score (higher = more automated already)
   scoreLine: string;     // "You're leaving roughly $4,200/month on the table"
+  hoursBack?: string;    // short stat: "12 hrs/week"
+  moneyBack?: string;    // short stat: "$3-5k/mo"
   topPick: MapItem;
   quickWins: MapItem[];  // 6-9 items, ROI-filtered, includes 1-2 surprise picks
   bigBuilds: { name: string; what: string }[]; // exactly 3, honestly scoped
@@ -42,9 +45,12 @@ export interface AuditMap {
 
 export interface AuditRow {
   id: string;
+  session_id: string | null;
+  stage: string | null;   // furthest stage reached (contact, tap_*, q3, map_ready...)
   name: string | null;
   email: string | null;
   phone: string | null;
+  website: string | null;
   taps: TapAnswers | null;
   history: QA[] | null;
   map: AuditMap | null;

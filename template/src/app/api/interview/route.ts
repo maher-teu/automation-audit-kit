@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const { taps, name, history } = body;
     if (!taps?.category) return NextResponse.json({ error: "missing taps" }, { status: 400 });
 
-    const cap = Math.min(CONFIG.maxQuestions, 10);
+    const cap = Math.min(CONFIG.maxQuestions, 12);
     if ((history?.length || 0) >= cap) {
       return NextResponse.json({ done: true } satisfies InterviewTurn);
     }

@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as {
       taps: TapAnswers; name: string; email: string; phone: string; history: QA[]; website?: string;
+      auditId?: string; session?: string;
     };
     const { taps, name, email, phone, history } = body;
     if (!taps?.category || !email) return NextResponse.json({ error: "missing fields" }, { status: 400 });
@@ -32,19 +33,35 @@ export async function POST(req: NextRequest) {
     const text = resp.content.filter((b) => b.type === "text").map((b) => (b as { text: string }).text).join("\n");
     const map = extractJson<AuditMap>(text);
 
-    const { data, error } = await sb()
-      .from("audits")
-      .insert({ name, email, phone, taps, history, map, built: [] })
-      .select("id")
-      .single();
-    if (error) throw error;
+    // Contact-first flow: the row already exists from /begin, so update it.
+    // Fallback insert keeps a failed /begin (or an old session) working.
+    let id: string | null = null;
+    if (body.auditId) {
+      const { error } = await sb()
+        .from("audits")
+        .update({ name, email, phone, website: body.website || "", taps, history, map, stage: "map_ready" })
+        .eq("id", body.auditId);
+      if (!error) id = body.auditId;
+    }
+    if (!id) {
+      const { data, error } = await sb()
+        .from("audits")
+        .insert({
+          name, email, phone, website: body.website || "", taps, history, map,
+          built: [], session_id: body.session || null, stage: "map_ready",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      id = data.id as string;
+    }
 
     // Fire-and-forget lead delivery (email + GHL). Never blocks the visitor.
-    notifyLead({ id: data.id as string, name, email, phone, taps, map }).catch((e) =>
+    notifyLead({ id, name, email, phone, taps, map }).catch((e) =>
       console.error("lead notify failed:", e)
     );
 
-    return NextResponse.json({ id: data.id });
+    return NextResponse.json({ id });
   } catch (e) {
     console.error("generate error:", e);
     return NextResponse.json({ error: "generation failed" }, { status: 500 });

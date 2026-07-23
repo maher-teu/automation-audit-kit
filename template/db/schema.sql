@@ -21,3 +21,18 @@ create index if not exists audits_email_idx on audits (email);
 -- Row Level Security ON with no public policies: only the service-role key
 -- (server-side) can read or write. Visitor pages go through the app's API.
 alter table audits enable row level security;
+
+-- Contact-first flow + drop-off tracking (safe to re-run).
+alter table audits add column if not exists session_id text;
+alter table audits add column if not exists stage text;
+alter table audits add column if not exists website text;
+
+create table if not exists audit_events (
+  id bigint generated always as identity primary key,
+  session_id text not null,
+  stage text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_events_session_idx on audit_events(session_id);
+create index if not exists audit_events_stage_idx on audit_events(stage);
+alter table audit_events enable row level security;

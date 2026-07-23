@@ -585,10 +585,10 @@ export const LIBRARY: CategoryLib[] = [
 export const DASHBOARD_ITEM: LibItem = {
   id: "money-dashboard",
   name: "The money dashboard",
-  what: "One page that answers the only questions that matter: leads, booked, closed, and cash by source, plus cost per lead, cost per booked call, and cost per sale. You type nothing, it pulls from the tools you named in this interview, and the MVP version ships in half a day with the sources you already have, then grows from there.",
+  what: "One page where cash is the hero: cash collected and revenue signed for any date range, and every lead source scored by the MONEY it produced, not the lead count. Each source shows leads in, booked, closed, and cash out, sorted by cash, so you see in one glance which channel actually prints money and which one just makes noise. This is the same dashboard the owner of this audit runs their own business on.",
   mech: "both",
-  mathHint: "hours_on_manual_reporting_per_week * owner_hourly_value * 4 + (ad_spend_per_month * wasted_spend_share_found) = monthly value (owners typically find 0.1 to 0.2 of spend going to sources that never produce cash)",
+  mathHint: "hours_on_manual_reporting_per_week * owner_hourly_value * 4 + (marketing_spend_per_month * wasted_spend_share_found) = monthly value (owners typically find 0.1 to 0.2 of spend going to sources that never produce cash)",
   time: "half_day",
-  tools: "Claude Code + the CRM, payment, and ad accounts you already use, nothing new to buy",
-  planSeed: "Connect lead source, booking, and payment APIs from the owner's stack | nightly job joins leads to bookings to cash by source | compute CPL, cost per booked call, cost per sale | render a single always-current page | daily one-line summary to the owner's phone",
+  tools: "Claude Code + the tools where your leads and payments already live, nothing new to buy",
+  planSeed: "Tag every new lead with WHERE it came from at the moment it arrives (first touch), and tag every sale with HOW it was booked (last touch) | store leads, customers, and payments in one small database | one page, filterable by date range and source: cash collected, revenue signed, then a table per source with leads, booked, closed, cash, sorted by cash | add efficiency lines: cash per booked call, average deal size | funnel view per channel: leads in, replies, booked, showed, closed, so you see exactly where people leak out",
 };

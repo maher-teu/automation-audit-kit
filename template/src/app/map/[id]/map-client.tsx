@@ -7,7 +7,13 @@ const TIME_LABEL = { "60min": "60 min", half_day: "half day", week: "~1 week" } 
 const TIME_COLOR = { "60min": "var(--green)", half_day: "var(--amber)", week: "var(--blue)" } as const;
 const MECH_LABEL = { makes_money: "Makes money", saves_time: "Saves time", both: "Money + time" } as const;
 
-export default function MapClient({ row }: { row: AuditRow }) {
+export interface Playbook {
+  label: string;
+  quick: { name: string; what: string; time: "60min" | "half_day" | "week" }[];
+  big: { name: string; what: string }[];
+}
+
+export default function MapClient({ row, playbook }: { row: AuditRow; playbook: Playbook }) {
   const map = row.map!;
   const [built, setBuilt] = useState<Set<string>>(new Set(row.built || []));
   const [copied, setCopied] = useState("");
@@ -43,18 +49,19 @@ export default function MapClient({ row }: { row: AuditRow }) {
   return (
     <main className="wrap">
       <div className="kick">Your automation map · private link, stays live</div>
-      <h1 style={{ marginTop: 8 }}>{map.headline}</h1>
+      <h1 className="kit-headline">{map.headline}</h1>
 
-      {/* score + diagnosis */}
-      <div className="card" style={{ marginTop: 18, display: "flex", gap: 18, alignItems: "center" }}>
-        <div style={{ textAlign: "center", flex: "0 0 auto" }}>
-          <div style={{ fontSize: 40, fontWeight: 750, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.02em" }}>{map.score}</div>
-          <div style={{ fontSize: 10.5, color: "var(--sec)", marginTop: 4, letterSpacing: "0.04em" }}>AUTOMATION SCORE</div>
-        </div>
-        <div>
-          <div style={{ fontSize: 15.5, fontWeight: 650, lineHeight: 1.4 }}>{map.scoreLine}</div>
-          <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{map.diagnosis}</div>
-        </div>
+      {/* the numbers, one clean row: score, hours back, money on the table */}
+      <div className="kit-stats">
+        <div className="kit-stat"><b>{map.score}<span style={{ fontSize: "0.55em", color: "var(--sec)", fontWeight: 650 }}>/100</span></b><span>automation score</span></div>
+        {map.hoursBack && <div className="kit-stat"><b>{map.hoursBack}</b><span>back every week</span></div>}
+        {map.moneyBack && <div className="kit-stat green"><b>{map.moneyBack}</b><span>on the table</span></div>}
+      </div>
+
+      {/* the diagnosis reads like a note from Otto, not a wall of headline */}
+      <div className="card" style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 650, lineHeight: 1.4 }}>{map.scoreLine}</div>
+        <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{map.diagnosis}</div>
       </div>
 
       {doneCount > 0 && (
@@ -83,6 +90,37 @@ export default function MapClient({ row }: { row: AuditRow }) {
           </div>
         ))}
       </div>
+
+      {/* the generic checklist: what every business of their type can run */}
+      <Section label="The standard playbook for your type of business" />
+      <p className="sub" style={{ fontSize: 12.5, margin: "2px 2px 10px" }}>
+        Everything above was picked for YOUR answers. This is the standard set almost every
+        business like yours ({playbook.label.toLowerCase()}) can run. Keep it as a checklist.
+      </p>
+      <div className="card" style={{ padding: 0 }}>
+        {playbook.quick.map((p, i) => (
+          <div key={p.name} style={{ padding: "12px 16px", borderTop: i ? "1px solid var(--hair)" : "none", display: "flex", gap: 10, alignItems: "baseline" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 650 }}>{p.name}</div>
+              <div className="sub" style={{ fontSize: 12, marginTop: 2 }}>{p.what}</div>
+            </div>
+            <span className="chip" style={{ flex: "0 0 auto", color: TIME_COLOR[p.time] }}>{TIME_LABEL[p.time]}</span>
+          </div>
+        ))}
+      </div>
+      {playbook.big.length > 0 && (
+        <>
+          <p className="sub" style={{ fontSize: 12.5, margin: "14px 2px 8px" }}>And the bigger swings, about a week each:</p>
+          <div className="card" style={{ padding: 0 }}>
+            {playbook.big.map((p, i) => (
+              <div key={p.name} style={{ padding: "12px 16px", borderTop: i ? "1px solid var(--hair)" : "none" }}>
+                <div style={{ fontSize: 14, fontWeight: 650 }}>{p.name}</div>
+                <div className="sub" style={{ fontSize: 12, marginTop: 2 }}>{p.what}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* CTA ladder */}
       <div className="card" style={{ marginTop: 30, textAlign: "center", padding: 24 }}>

@@ -1,6 +1,7 @@
 import { sb } from "@/lib/db";
 import { AuditRow } from "@/lib/types";
-import MapClient from "./map-client";
+import { LIBRARY } from "@/lib/library";
+import MapClient, { Playbook } from "./map-client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,5 +25,22 @@ export default async function MapPage({ params }: { params: Promise<{ id: string
       </main>
     );
   }
-  return <MapClient row={row} />;
+
+  // The standard playbook for their business type: the generic fast wins plus
+  // the bigger swings every business like theirs can run, straight from the
+  // curated library. The personalized map sits above it; this is the checklist.
+  const lib = LIBRARY.find((c) => c.key === row!.taps?.category) || LIBRARY[0];
+  const firstSentence = (s: string) => {
+    const i = s.indexOf(". ");
+    return i === -1 ? s : s.slice(0, i + 1);
+  };
+  const playbook: Playbook = {
+    label: lib.label,
+    quick: lib.items.filter((i) => i.time !== "week").slice(0, 9)
+      .map((i) => ({ name: i.name, what: firstSentence(i.what), time: i.time })),
+    big: lib.items.filter((i) => i.time === "week").slice(0, 3)
+      .map((i) => ({ name: i.name, what: firstSentence(i.what) })),
+  };
+
+  return <MapClient row={row} playbook={playbook} />;
 }
